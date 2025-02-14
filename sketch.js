@@ -17,9 +17,19 @@ class TextParticle {
 
   update() {
     if (!isExploded) {
+      // 横向贯穿运动
+      this.pos.x += 2; // 持续向右移动
+      
+      // 当移出屏幕右侧时，从左侧随机Y轴位置重新进入
+      if (this.pos.x > width + 50) {
+        this.pos.x = -50;
+        this.pos.y = random(50, height - 50); // 在屏幕高度范围内随机选择新的Y轴位置
+        this.baseY = this.pos.y; // 更新基准Y轴位置
+      }
+      
       // 波浪运动:正弦波 + 噪声
-      let wave = sin(wavePhase + this.angleOffset) * 20;
-      let noiseVal = noise(this.baseX * 0.01, this.baseY * 0.01) * 30;
+      let wave = sin(wavePhase + this.angleOffset) * 15;
+      let noiseVal = noise(this.pos.x * 0.01, this.baseY * 0.01) * 20;
       this.pos.y = this.baseY + wave + noiseVal;
       
       // 动态缩放逻辑
@@ -28,12 +38,22 @@ class TextParticle {
       }
       this.scale = lerp(this.scale, this.targetScale, 0.1);
 
-      // 鼠标悬停交互
-      let mouseDist = dist(mouseX, mouseY, this.pos.x, this.pos.y);
-      if (mouseDist < 100) {
-        let influence = map(mouseDist, 0, 100, 1.5, 0);
-        this.pos.x += random(-3 * influence, 3 * influence);
-        this.pos.y += random(-3 * influence, 3 * influence);
+      // 鼠标避让交互
+      if (mouseX > 0 && mouseX < width && mouseY > 0 && mouseY < height) {
+        let mouseDist = dist(mouseX, mouseY, this.pos.x, this.pos.y);
+        if (mouseDist < 100) {
+          // 计算从鼠标指向文字的方向向量
+          let repelForce = p5.Vector.sub(this.pos, createVector(mouseX, mouseY));
+          repelForce.normalize();
+          
+          // 根据距离计算推力强度和缩放比例
+          let strength = map(mouseDist, 0, 100, 8, 0);
+          let scaleInfluence = map(mouseDist, 0, 100, 0.5, 1);
+          
+          // 应用推力和缩放
+          this.pos.add(repelForce.mult(strength));
+          this.targetScale = scaleInfluence;
+        }
       }
     } else {
       // 爆炸运动
@@ -74,7 +94,8 @@ function setup() {
 }
 
 function draw() {
-  background(255);
+  // 使用半透明背景实现残影效果
+  background(255, 25);
   wavePhase += 0.05;
 
   particles.forEach(particle => {
