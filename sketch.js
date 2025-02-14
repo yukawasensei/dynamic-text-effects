@@ -54,6 +54,9 @@ class TextParticle {
           this.pos.add(repelForce.mult(strength));
           this.targetScale = scaleInfluence;
         }
+      } else {
+        // 鼠标移出窗口时，重置缩放比例
+        this.targetScale = 1;
       }
     } else {
       // 爆炸运动
